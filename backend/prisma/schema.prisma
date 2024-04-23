@@ -1,0 +1,105 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+// Enum for order statuses
+enum OrderStatus {
+  PENDING
+  SHIPPED
+  DELIVERED
+  CANCELLED
+}
+
+// Model for users (customers and admins)
+model User {
+  id           Int           @id @default(autoincrement())
+  username     String        @unique
+  firstName    String
+  lastName     String
+  password     String
+  email        String        @unique
+  phoneNumber  String
+  avatar       String?
+  orders       Order[]
+  shoppingCart ShoppingCart?
+}
+
+// Model for products
+model Product {
+  id               Int                @id @default(autoincrement())
+  name             String
+  productImages    ProductImage[]
+  description      String?
+  price            Float
+  orderDetails     OrderDetail[]
+  shoppingCartItem ShoppingCartItem[]
+}
+
+model ProductImage {
+  file      String  @unique
+  productId Int
+  product   Product @relation(fields: [productId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+}
+
+// Model for shopping carts
+model ShoppingCart {
+  id                Int                @id @default(autoincrement())
+  userId            Int                @unique
+  user              User               @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  shoppingCartItems ShoppingCartItem[]
+}
+
+// Model for shopping carts
+model ShoppingCartItem {
+  productId      Int
+  size           String
+  quantity       Int
+  shoppingCartId Int
+  shoppingCart   ShoppingCart @relation(fields: [shoppingCartId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  product        Product      @relation(fields: [productId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+
+  @@id([productId, shoppingCartId, size])
+}
+
+// Model for orders
+model Order {
+  id           Int           @id @default(autoincrement())
+  orderDate    DateTime      @default(now())
+  status       OrderStatus   @default(value: PENDING)
+  orderDetails OrderDetail[]
+  deliveryFee  Float         @default(0)
+  userId       Int
+  user         User          @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  firstName    String
+  lastName     String
+  email        String
+  phoneNumber  String
+  address      String
+  postalCode   String
+  province     String
+  district     String
+  subdistrict  String
+  cardName     String
+  cardNumber   String
+}
+
+// Model for order details
+model OrderDetail {
+  orderId   Int
+  productId Int
+  size      String
+  quantity  Int
+  price     Float
+  order     Order   @relation(fields: [orderId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  product   Product @relation(fields: [productId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+
+  @@id([orderId, productId, size])
+}
